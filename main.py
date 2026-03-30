@@ -80,6 +80,8 @@ def add_user(user_id):
 
 # چک عضویت
 async def is_joined(user_id, context):
+    if user_id == ADMIN_ID:
+        return True
     try:
         member = await context.bot.get_chat_member(CHANNEL_USERNAME, user_id)
         return member.status in ["member", "creator", "administrator"]
