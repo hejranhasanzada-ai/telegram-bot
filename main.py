@@ -7,8 +7,8 @@ import time
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
 
-TOKEN = "8725924709:AAH-f7h18HpXE2vy-QrxNpCoMTGZFn3gHn4"
-CHANNEL_USERNAME = "@smartyt_af"
+TOKEN = "8611009386:AAHsJYl7IhJQ6YrQZwI12sp4U5Mv9_Fwm-o"
+CHANNEL_USERNAME = "@vexorasave017"
 ADMIN_ID = 562708594
 
 # دیتابیس
