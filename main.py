@@ -159,14 +159,16 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             try:
                 with open(file, "rb") as f:
-                    if file.endswith(".mp4"):
-                        await update.message.reply_video(f)
-                    elif file.endswith((".jpg", ".png", ".jpeg")):
-                        await update.message.reply_photo(f)
-                    else:
-                        await update.message.reply_document(f)
+                    chat_id = update.effective_chat.id
 
-                await asyncio.sleep(1)
+                    if file.endswith(".mp4"):
+                        await context.bot.send_video(chat_id=chat_id, video=f)
+                    elif file.endswith((".jpg", ".png", ".jpeg")):
+                        await context.bot.send_photo(chat_id=chat_id, photo=f)
+                    else:
+                        await context.bot.send_document(chat_id=chat_id, document=f)
+
+
                 os.remove(file)
 
             except Exception as e:
