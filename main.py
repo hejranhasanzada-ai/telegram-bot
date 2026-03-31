@@ -125,14 +125,14 @@ async def check_join(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.answer("❌", show_alert=True)
 
 # دانلود
-ydl_opts = {
-    "outtmpl": "downloads/%(title)s.%(ext)s",
-    "format": "best",
-    "quiet": True,
-    "noplaylist": True,
-    "cookiefile": "cookies.txt"
-}
+def download_sync(url):
+    ydl_opts = {
+        "outtmpl": "downloads/%(title)s.%(ext)s",
+        "format": "best",
+        "quiet": True,
+        "noplaylist": True
     }
+
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
         return [ydl.prepare_filename(info)]
