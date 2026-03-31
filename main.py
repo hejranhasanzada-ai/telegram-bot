@@ -149,10 +149,15 @@ async def handle_instagram(update, context, url):
         ydl_opts = {
             'outtmpl': 'insta.%(ext)s',
             'format': 'best',
-            'quiet': True
+            'quiet': True,
+            'cookiesfrombrowser': ('chrome',)
         }
 
         info = ydl.extract_info(url, download=True)
+
+        if not info:
+            await update.message.reply_text("❌ لینک خراب است")
+            return
 
         if 'entries' in info:
             info = info['entries'][0]
