@@ -125,10 +125,13 @@ async def check_join(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.answer("❌", show_alert=True)
 
 # دانلود
-def download_sync(url):
-    ydl_opts = {
-        "outtmpl": "downloads/%(title)s.%(ext)s",
-        "format": "best"
+ydl_opts = {
+    "outtmpl": "downloads/%(title)s.%(ext)s",
+    "format": "best",
+    "quiet": True,
+    "noplaylist": True,
+    "cookiefile": "cookies.txt"
+}
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
@@ -148,6 +151,9 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     url = update.message.text
+    if "instagram.com" in url:
+        await handle_instagram(update, context, url)
+        return
     msg = await update.message.reply_text(TEXTS[lang]["downloading"])
 
     try:
