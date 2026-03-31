@@ -151,7 +151,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     url = update.message.text
-    if "instagram.com" in url:
+    if "instagram" in url:
         await handle_instagram(update, context, url)
         return
     msg = await update.message.reply_text(TEXTS[lang]["downloading"])
