@@ -145,16 +145,19 @@ import os
 async def handle_instagram(update, context, url):
     try:
         chat_id = update.effective_chat.id
-
+        await update.message.reply_text("⏳ در حال دانلود...")
         ydl_opts = {
             'outtmpl': 'insta.%(ext)s',
             'format': 'best',
             'quiet': True
         }
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            file_path = ydl.prepare_filename(info)
+        info = ydl.extract_info(url, download=True)
+
+        if 'entries' in info:
+            info = info['entries'][0]
+
+        file_path = ydl.prepare_filename(info)
 
         with open(file_path, 'rb') as f:
             await context.bot.send_video(chat_id=chat_id, video=f)
