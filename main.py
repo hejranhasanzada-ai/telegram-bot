@@ -160,7 +160,10 @@ async def handle_instagram(update, context, url):
         file_path = ydl.prepare_filename(info)
 
         with open(file_path, 'rb') as f:
-            await context.bot.send_video(chat_id=chat_id, video=f)
+            if file_path.endswith(".mp4"):
+                await context.bot.send_video(chat_id=chat_id, video=f)
+            else:
+                await context.bot.send_photo(chat_id=chat_id, photo=f)
 
         os.remove(file_path)
 
