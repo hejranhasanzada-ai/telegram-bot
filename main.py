@@ -150,7 +150,7 @@ async def handle_instagram(update, context, url):
             'outtmpl': 'insta.%(ext)s',
             'format': 'best',
             'quiet': True,
-            'cookiesfrombrowser': ('chrome',)
+            'noplaylist': True,
         }
 
         info = ydl.extract_info(url, download=True)
