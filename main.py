@@ -140,38 +140,30 @@ def download_sync(url):
 async def download(url):
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, download_sync, url)
-import requests
-import re
+import yt_dlp
 import os
-
 async def handle_instagram(update, context, url):
     try:
         chat_id = update.effective_chat.id
 
-        api_url = f"https://api.vevioz.com/api/button/mp4?url={url}"
-        res = requests.get(api_url).text
+        ydl_opts = {
+            'outtmpl': 'insta.%(ext)s',
+            'format': 'best',
+            'quiet': True
+        }
 
-        video_links = re.findall(r'href="(https://[^"]+\.mp4)"', res)
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            file_path = ydl.prepare_filename(info)
 
-        if not video_links:
-            await update.message.reply_text("❌ دانلود نشد")
-            return
-
-        video_url = video_links[0]
-        video_data = requests.get(video_url).content
-
-        file_path = "insta.mp4"
-        with open(file_path, "wb") as f:
-            f.write(video_data)
-
-        with open(file_path, "rb") as f:
+        with open(file_path, 'rb') as f:
             await context.bot.send_video(chat_id=chat_id, video=f)
 
         os.remove(file_path)
 
     except Exception as e:
         print(e)
-        await update.message.reply_text("❌ خطا")
+        await update.message.reply_text("❌ خطا در دانلود اینستاگرام")
 # هندل اصلی (بدون باگ)
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
