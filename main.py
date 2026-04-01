@@ -4,7 +4,7 @@ import os
 import yt_dlp
 import time
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto, InputMediaVideo
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
 
 TOKEN = "8611009386:AAHsJYl7IhJQ6YrQZwI12sp4U5Mv9_Fwm-o"
@@ -162,17 +162,31 @@ async def handle_instagram(update, context, url):
                 return
 
             if 'entries' in info:
-                info = info['entries'][0]
+                media = []
 
-            file_path = ydl.prepare_filename(info)
+                for item in info['entries']:
+                    file_path = ydl.prepare_filename(item)
 
-            with open(file_path, 'rb') as f:
-                if file_path.endswith('.mp4'):
-                    await context.bot.send_video(chat_id=chat_id, video=f)
-                else:
-                    await context.bot.send_photo(chat_id=chat_id, photo=f)
+                    with open(file_path, 'rb') as f:
+                        if item.get('ext') == 'mp4':
+                            media.append(InputMediaVideo(media=f.read()))
+                        else:
+                            media.append(InputMediaPhoto(media=f.read()))
 
-            os.remove(file_path)
+                    os.remove(file_path)
+
+                await context.bot.send_media_group(chat_id=chat_id, media=media)
+
+            else:
+                file_path = ydl.prepare_filename(info)
+
+                with open(file_path, 'rb') as f:
+                    if info.get('ext') == 'mp4':
+                        await context.bot.send_video(chat_id=chat_id, video=f)
+                    else:
+                        await context.bot.send_photo(chat_id=chat_id, photo=f)
+
+                os.remove(file_path)
 
     except Exception as e:
         print(e)
