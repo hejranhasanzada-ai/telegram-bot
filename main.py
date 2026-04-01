@@ -151,26 +151,28 @@ async def handle_instagram(update, context, url):
             'format': 'best',
             'quiet': True,
             'noplaylist': True,
+            'cookiefile': 'cookies.txt'
         }
 
-        info = ydl.extract_info(url, download=True)
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
 
-        if not info:
-            await update.message.reply_text("❌ لینک خراب است")
-            return
+            if not info:
+                await update.message.reply_text('❌ لینک خراب است')
+                return
 
-        if 'entries' in info:
-            info = info['entries'][0]
+            if 'entries' in info:
+                info = info['entries'][0]
 
-        file_path = ydl.prepare_filename(info)
+            file_path = ydl.prepare_filename(info)
 
-        with open(file_path, 'rb') as f:
-            if file_path.endswith(".mp4"):
-                await context.bot.send_video(chat_id=chat_id, video=f)
-            else:
-                await context.bot.send_photo(chat_id=chat_id, photo=f)
+            with open(file_path, 'rb') as f:
+                if file_path.endswith('.mp4'):
+                    await context.bot.send_video(chat_id=chat_id, video=f)
+                else:
+                    await context.bot.send_photo(chat_id=chat_id, photo=f)
 
-        os.remove(file_path)
+            os.remove(file_path)
 
     except Exception as e:
         print(e)
