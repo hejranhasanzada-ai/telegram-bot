@@ -2,16 +2,15 @@ import sqlite3
 import asyncio
 import os
 import yt_dlp
-import time
+import aiohttp  # ✅ جایگزین requests
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto, InputMediaVideo
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
 
-TOKEN = "8611009386:AAHsJYl7IhJQ6YrQZwI12sp4U5Mv9_Fwm-o"
+TOKEN = "8611009386:AAHCPfXycUt_ZEfe4K58u3BunTvhgJ0eNbo"
 CHANNEL_USERNAME = "@vexorasave017"
 ADMIN_ID = 562708594
 
-# دیتابیس
 conn = sqlite3.connect("users.db", check_same_thread=False)
 cursor = conn.cursor()
 
@@ -23,33 +22,32 @@ CREATE TABLE IF NOT EXISTS users (
 """)
 conn.commit()
 
-# متن‌ها
 TEXTS = {
     "fa": {
-        "welcome": "🌐 زبان خود را انتخاب کن:",
-        "join": "❌ اول عضو کانال شو:",
-        "start": "🚀 خوش آمدی! لینک بفرست",
+        "welcome": "🌐 زبان خود را انتخاب کن",
+        "join": "❌ اول عضو کانال شو",
+        "start": "🚀 لینک بفرست",
         "downloading": "⏳ در حال دانلود...",
         "error": "❌ خطا در دانلود"
     },
     "en": {
-        "welcome": "🌐 Choose language:",
-        "join": "❌ Join channel first:",
-        "start": "🚀 Welcome! Send link",
+        "welcome": "🌐 Choose language",
+        "join": "❌ Join channel first",
+        "start": "🚀 Send link",
         "downloading": "⏳ Downloading...",
         "error": "❌ Download error"
     },
     "de": {
-        "welcome": "🌐 Sprache wählen:",
-        "join": "❌ Kanal beitreten:",
-        "start": "🚀 Willkommen! Link senden",
+        "welcome": "🌐 Sprache wählen",
+        "join": "❌ Kanal beitreten",
+        "start": "🚀 Link senden",
         "downloading": "⏳ Wird geladen...",
         "error": "❌ Fehler"
     },
     "ar": {
-        "welcome": "🌐 اختر اللغة:",
-        "join": "❌ انضم للقناة:",
-        "start": "🚀 مرحبا! أرسل الرابط",
+        "welcome": "🌐 اختر اللغة",
+        "join": "❌ انضم للقناة",
+        "start": "🚀 أرسل الرابط",
         "downloading": "⏳ جاري التحميل...",
         "error": "❌ خطأ"
     }
@@ -66,7 +64,7 @@ def language_keyboard():
 def join_keyboard():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("🔥 Join Channel", url=f"https://t.me/{CHANNEL_USERNAME.replace('@','')}")],
-        [InlineKeyboardButton("عضو شدم ✅", callback_data="check_join")]
+        [InlineKeyboardButton("✅ عضو شدم", callback_data="check_join")]
     ])
 
 def get_lang(user_id):
@@ -78,28 +76,21 @@ def add_user(user_id):
     cursor.execute("INSERT OR IGNORE INTO users (user_id) VALUES (?)", (user_id,))
     conn.commit()
 
-# چک عضویت
 async def is_joined(user_id, context):
-    if user_id == ADMIN_ID:
-        return True
     try:
         member = await context.bot.get_chat_member(CHANNEL_USERNAME, user_id)
-        return member.status in ["member", "creator", "administrator"]
+        return member.status in ["member", "administrator", "creator"]
     except:
         return False
 
-# start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     add_user(user_id)
-
     await update.message.reply_text(TEXTS["fa"]["welcome"], reply_markup=language_keyboard())
 
-# انتخاب زبان
 async def set_language(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = query.from_user.id
-
     lang = query.data.split("_")[1]
 
     cursor.execute("UPDATE users SET language=? WHERE user_id=?", (lang, user_id))
@@ -112,7 +103,6 @@ async def set_language(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await query.message.edit_text(TEXTS[lang]["start"])
 
-# تایید عضویت
 async def check_join(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = query.from_user.id
@@ -124,15 +114,11 @@ async def check_join(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await query.answer("❌", show_alert=True)
 
-# دانلود
 def download_sync(url):
     ydl_opts = {
         "outtmpl": "downloads/%(title)s.%(ext)s",
-        "format": "best",
-        "quiet": True,
-        "noplaylist": True
+        "format": "best"
     }
-
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
         return [ydl.prepare_filename(info)]
@@ -140,58 +126,8 @@ def download_sync(url):
 async def download(url):
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, download_sync, url)
-import yt_dlp
-import os
-async def handle_instagram(update, context, url):
-    try:
-        chat_id = update.effective_chat.id
-        await update.message.reply_text("⏳ در حال دانلود...")
-        ydl_opts = {
-            'outtmpl': 'insta.%(ext)s',
-            'format': 'best',
-            'quiet': True,
-            'noplaylist': True,
-            'cookiefile': 'cookies.txt'
-        }
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-
-            if not info:
-                await update.message.reply_text('❌ لینک خراب است')
-                return
-
-            if 'entries' in info:
-                media = []
-
-                for item in info['entries']:
-                    file_path = ydl.prepare_filename(item)
-
-                    with open(file_path, 'rb') as f:
-                        if item.get('ext') == 'mp4':
-                            media.append(InputMediaVideo(media=f.read()))
-                        else:
-                            media.append(InputMediaPhoto(media=f.read()))
-
-                    os.remove(file_path)
-
-                await context.bot.send_media_group(chat_id=chat_id, media=media)
-
-            else:
-                file_path = ydl.prepare_filename(info)
-
-                with open(file_path, 'rb') as f:
-                    if info.get('ext') == 'mp4':
-                        await context.bot.send_video(chat_id=chat_id, video=f)
-                    else:
-                        await context.bot.send_photo(chat_id=chat_id, photo=f)
-
-                os.remove(file_path)
-
-    except Exception as e:
-        print(e)
-        await update.message.reply_text("❌ خطا در دانلود اینستاگرام")
-# هندل اصلی (بدون باگ)
+# 🔥 نسخه حرفه‌ای handle
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     lang = get_lang(user_id)
@@ -201,42 +137,49 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     url = update.message.text
-    if "instagram" in url:
-        await handle_instagram(update, context, url)
-        return
     msg = await update.message.reply_text(TEXTS[lang]["downloading"])
 
     try:
-        files = await download(url)
+        # ✅ TikTok بدون واترمارک
+        if "tiktok.com" in url:
+            api = f"https://tikwm.com/api/?url={url}"
 
-        for file in files:
-            if not os.path.exists(file):
-                continue
+            async with aiohttp.ClientSession() as session:
+                async with session.get(api) as resp:
+                    res = await resp.json()
 
-            try:
-                with open(file, "rb") as f:
-                    chat_id = update.effective_chat.id
+            data = res.get("data")
 
+            if not data:
+                await update.message.reply_text(TEXTS[lang]["error"])
+                return
+
+            video_url = data.get("play")  # 👈 اینو عوض کردیم (مهم)
+
+            if not video_url:
+                await update.message.reply_text(TEXTS[lang]["error"])
+                return
+
+            await update.message.reply_video(video_url)
+
+        else:
+            # ✅ اینستا + X + یوتیوب
+            files = await download(url)
+
+            for file in files:
+                try:
                     if file.endswith(".mp4"):
-                        await context.bot.send_video(chat_id=chat_id, video=f)
-                    elif file.endswith((".jpg", ".png", ".jpeg")):
-                        await context.bot.send_photo(chat_id=chat_id, photo=f)
-                    else:
-                        await context.bot.send_document(chat_id=chat_id, document=f)
-
-
-                os.remove(file)
-
-            except Exception as e:
-                print("SEND ERROR:", e)
-
-        await msg.delete()
+                        with open(file, "rb") as f:
+                            await update.message.reply_video(video=open(file, "rb"), read_timeout=60, write_timeout=60)
+                finally:
+                    if os.path.exists(file):
+                        os.remove(file)
 
     except Exception as e:
-        print("DOWNLOAD ERROR:", e)
+        print(e)
         await update.message.reply_text(TEXTS[lang]["error"])
 
-# ====== ادمین ======
+    await msg.delete()
 
 async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
@@ -251,6 +194,7 @@ async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def admin_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
+    await query.answer()
 
     if query.from_user.id != ADMIN_ID:
         return
@@ -262,7 +206,7 @@ async def admin_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif query.data == "broadcast":
         context.user_data["broadcast"] = True
-        await query.message.reply_text("✉️ پیام را بفرست:")
+        await query.message.reply_text("📨 پیام را بفرست")
 
 async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
@@ -281,7 +225,6 @@ async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["broadcast"] = False
         await update.message.reply_text("✅ ارسال شد")
 
-# اجرا
 def main():
     os.makedirs("downloads", exist_ok=True)
 
@@ -298,7 +241,6 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
 
     print("🔥 BOT RUNNING...")
-
     app.run_polling()
 
 if __name__ == "__main__":
